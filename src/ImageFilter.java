@@ -12,7 +12,7 @@ public class ImageFilter extends javax.swing.filechooser.FileFilter
     public boolean accept(File f)
     {
         boolean result = false;
-        if (f.getName().toLowerCase().endsWith(".jpg") || f.getName().toLowerCase().endsWith(".jpeg"))
+        if (f.getName().toLowerCase().endsWith(".jpg") || f.getName().toLowerCase().endsWith(".jpeg") || f.getName().toLowerCase().endsWith(".png"))
         {
             result = true;
         }
