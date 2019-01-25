@@ -10,11 +10,12 @@ public class Main
 {
     private static final Color BACKGROUND = new Color(0x283E32);
     private static final Color WHITE = new Color(0xFFFFFF);
-    private static final int BORDER = 30, MIN_DIST = 1, MAX_DIST = 6, DEFAULT_DIST = 2, MIN_STRENGTH = 0, MAX_STRENGTH = 10, DEFAULT_STREGNTH = 0;
+    private static final int BORDER = 30, MIN_DIST = 1, MAX_DIST = 6, DEFAULT_DIST = 2, MIN_STRENGTH = 0, MAX_STRENGTH = 10, DEFAULT_STRENGTH = 0;
+    private static final int DEFAULT_THRESHOLD = 30, MIN_THRESHOLD = 5, MAX_THRESHOLD = 105;
     private static JFrame frame;
     private static BufferedImage image;
     private static BufferedImage outImg;
-    private static int dist, strength;
+    private static int dist, strength, threshold;
 
 
     public static void main(String[] args)
@@ -28,6 +29,8 @@ public class Main
     private static void initScreen()
     {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        //TODO arrange ui so only relevant options are shown.
 
         //panel
         JPanel panel = new JPanel();
@@ -49,14 +52,24 @@ public class Main
         panel.add(distField);
 
         //strength
-        JSlider strengthField = new JSlider(JSlider.HORIZONTAL, MIN_STRENGTH, MAX_STRENGTH, DEFAULT_STREGNTH);
+        JSlider strengthField = new JSlider(JSlider.HORIZONTAL, MIN_STRENGTH, MAX_STRENGTH, DEFAULT_STRENGTH);
         JLabel strengthLabel = new JLabel("Strength: ");
         strengthLabel.setForeground(WHITE);
-        dist = DEFAULT_DIST;
+        strength = DEFAULT_STRENGTH;
         strengthField.addChangeListener(e -> strength = strengthField.getValue());
         strengthField.setSnapToTicks(true);
         panel.add(strengthLabel);
         panel.add(strengthField);
+
+        //threshold
+        JSlider thresholdField = new JSlider(JSlider.HORIZONTAL, MIN_THRESHOLD, MAX_THRESHOLD, DEFAULT_THRESHOLD);
+        JLabel thresholdLabel = new JLabel("Threshold: ");
+        thresholdLabel.setForeground(WHITE);
+        threshold = DEFAULT_THRESHOLD;
+        thresholdField.addChangeListener(e -> threshold = thresholdField.getValue());
+        thresholdField.setSnapToTicks(true);
+        panel.add(thresholdLabel);
+        panel.add(thresholdField);
 
         //process
         Button process = new Button("Process Image");
@@ -65,8 +78,18 @@ public class Main
         {
             if (image != null)
             {
-//                processImage();
                 outImg = ImageProcesses.edgeColours(image, dist, strength);
+            }
+        });
+
+        //block
+        Button block = new Button("Block Image");
+        panel.add(block);
+        block.addActionListener(e ->
+        {
+            if (image != null)
+            {
+                outImg = ImageProcesses.block(image, threshold);
             }
         });
 
@@ -160,11 +183,6 @@ public class Main
         panel.setBorder(BorderFactory.createEmptyBorder(BORDER, BORDER, BORDER, BORDER));
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
     }
-
-//    private static void processImage()
-//    {
-//        outImg = ImageProcesses.edgeColours(image, dist, strength);
-//    }
 
 }
 
