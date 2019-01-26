@@ -105,13 +105,23 @@ public class Main
         });
 
         //save
-        Button save = new Button("Save Image");
-        panel.add(save);
-        save.addActionListener(e ->
+        Button saveJpg = new Button("Save as .jpg");
+        panel.add(saveJpg);
+        saveJpg.addActionListener(e ->
         {
             if (outImg != null)
             {
-                saveImage();
+                saveImage("jpg");
+            }
+        });
+
+        Button savePng = new Button("Save as .png");
+        panel.add(savePng);
+        savePng.addActionListener(e ->
+        {
+            if (outImg != null)
+            {
+                saveImage("png");
             }
         });
 
@@ -156,7 +166,7 @@ public class Main
 
     }
 
-    private static void saveImage()
+    private static void saveImage(String format)
     {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setMultiSelectionEnabled(false);
@@ -167,8 +177,14 @@ public class Main
         try {
             if (file != null)
             {
-                File outputFile = new File(file.getAbsolutePath());
-                ImageIO.write(outImg, "jpg", outputFile);
+                String path = file.getAbsolutePath();
+                //Slightly convoluted check for presence of file extension
+                if (!(new ImageFilter().accept(file)))
+                {
+                    path = file.getAbsolutePath() + "." + format;
+                }
+                File outputFile = new File(path);
+                ImageIO.write(outImg, format, outputFile);
             }
         } catch (IOException e) {
             System.out.println("Fail");
