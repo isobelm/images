@@ -1,204 +1,1 @@
-import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import javax.imageio.ImageIO;
-
-public class Main
-{
-    private static final Color BACKGROUND = new Color(0x283E32);
-    private static final Color WHITE = new Color(0xFFFFFF);
-    private static final int BORDER = 30, MIN_DIST = 1, MAX_DIST = 6, DEFAULT_DIST = 2, MIN_STRENGTH = 0, MAX_STRENGTH = 10, DEFAULT_STRENGTH = 0;
-    private static final int DEFAULT_THRESHOLD = 30, MIN_THRESHOLD = 5, MAX_THRESHOLD = 105;
-    private static JFrame frame;
-    private static BufferedImage image;
-    private static BufferedImage outImg;
-    private static int dist, strength, threshold;
-
-
-    public static void main(String[] args)
-    {
-        image = null;
-        outImg = null;
-        frame = new JFrame("Images");
-        initScreen();
-    }
-
-    private static void initScreen()
-    {
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        //TODO arrange ui so only relevant options are shown.
-
-        //panel
-        JPanel panel = new JPanel();
-        formatPanel(panel);
-
-        //choose image
-        Button choose = new Button("Choose Image");
-        panel.add(choose);
-        choose.addActionListener(e -> image = Main.getImage());
-
-        //dist
-        JSlider distField = new JSlider(JSlider.HORIZONTAL, MIN_DIST, MAX_DIST, DEFAULT_DIST);
-        JLabel distLabel = new JLabel("Edge Size: ");
-        distLabel.setForeground(WHITE);
-        dist = DEFAULT_DIST;
-        distField.addChangeListener(e -> dist = distField.getValue());
-        distField.setSnapToTicks(true);
-        panel.add(distLabel);
-        panel.add(distField);
-
-        //strength
-        JSlider strengthField = new JSlider(JSlider.HORIZONTAL, MIN_STRENGTH, MAX_STRENGTH, DEFAULT_STRENGTH);
-        JLabel strengthLabel = new JLabel("Strength: ");
-        strengthLabel.setForeground(WHITE);
-        strength = DEFAULT_STRENGTH;
-        strengthField.addChangeListener(e -> strength = strengthField.getValue());
-        strengthField.setSnapToTicks(true);
-        panel.add(strengthLabel);
-        panel.add(strengthField);
-
-        //threshold
-        JSlider thresholdField = new JSlider(JSlider.HORIZONTAL, MIN_THRESHOLD, MAX_THRESHOLD, DEFAULT_THRESHOLD);
-        JLabel thresholdLabel = new JLabel("Threshold: ");
-        thresholdLabel.setForeground(WHITE);
-        threshold = DEFAULT_THRESHOLD;
-        thresholdField.addChangeListener(e -> threshold = thresholdField.getValue());
-        thresholdField.setSnapToTicks(true);
-        panel.add(thresholdLabel);
-        panel.add(thresholdField);
-
-        //process
-        Button process = new Button("Process Image");
-        panel.add(process);
-        process.addActionListener(e ->
-        {
-            if (image != null)
-            {
-                outImg = ImageProcesses.edgeColours(image, dist, strength);
-            }
-        });
-
-        //block
-        Button block = new Button("Block Image");
-        panel.add(block);
-        block.addActionListener(e ->
-        {
-            if (image != null)
-            {
-                outImg = ImageProcesses.block(image, threshold);
-            }
-        });
-
-        //invert
-        Button invert = new Button("Invert");
-        panel.add(invert);
-        invert.addActionListener(e ->
-        {
-            if (outImg != null)
-            {
-                ImageProcesses.invert(outImg);
-            }
-        });
-
-        //save
-        Button saveJpg = new Button("Save as .jpg");
-        panel.add(saveJpg);
-        saveJpg.addActionListener(e ->
-        {
-            if (outImg != null)
-            {
-                saveImage("jpg");
-            }
-        });
-
-        Button savePng = new Button("Save as .png");
-        panel.add(savePng);
-        savePng.addActionListener(e ->
-        {
-            if (outImg != null)
-            {
-                saveImage("png");
-            }
-        });
-
-
-        frame.pack();
-        frame.setVisible(true);
-
-
-    }
-
-
-    private static BufferedImage getImage()
-    {
-        boolean imageAccepted;
-        BufferedImage image = null;
-        do
-        {
-            imageAccepted = true;
-            JFileChooser fileChooser = new JFileChooser();
-            FileFilter fileFilter = new ImageFilter();
-            fileChooser.setFileFilter(fileFilter);
-            fileChooser.setMultiSelectionEnabled(false);
-            fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-            fileChooser.showOpenDialog(frame);
-
-            File file = fileChooser.getSelectedFile();
-
-            try
-            {
-                if (file != null)
-                {
-                    image = ImageIO.read(file);
-                }
-            }
-            catch (java.io.IOException e)
-            {
-                imageAccepted = false;
-            }
-        } while (!imageAccepted);
-
-        return image;
-
-    }
-
-    private static void saveImage(String format)
-    {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setMultiSelectionEnabled(false);
-        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        fileChooser.showSaveDialog(frame);
-        File file = fileChooser.getSelectedFile();
-
-        try {
-            if (file != null)
-            {
-                String path = file.getAbsolutePath();
-                //Slightly convoluted check for presence of file extension
-                if (!(new ImageFilter().accept(file)))
-                {
-                    path = file.getAbsolutePath() + "." + format;
-                }
-                File outputFile = new File(path);
-                ImageIO.write(outImg, format, outputFile);
-            }
-        } catch (IOException e) {
-            System.out.println("Fail");
-
-        }
-    }
-
-    private static void formatPanel(JPanel panel)
-    {
-        frame.setContentPane(panel);
-        panel.setBackground(BACKGROUND);
-        panel.setBorder(BorderFactory.createEmptyBorder(BORDER, BORDER, BORDER, BORDER));
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-    }
-
-}
-
+import javax.swing.*;import javax.swing.filechooser.FileFilter;import java.awt.*;import java.awt.image.BufferedImage;import java.io.File;import java.io.IOException;import javax.imageio.ImageIO;public class Main{    private static final Color BACKGROUND = new Color(0x283E32);    private static final Color WHITE = new Color(0xFFFFFF);    private static final int BORDER = 30, MIN_DIST = 1, MAX_DIST = 6, DEFAULT_DIST = 2, MIN_STRENGTH = 0, MAX_STRENGTH = 30, DEFAULT_STRENGTH = 0;    private static final int DEFAULT_THRESHOLD = 30, MIN_THRESHOLD = 5, MAX_THRESHOLD = 105;    private static JFrame frame;    private static BufferedImage image;    private static BufferedImage outImg;    private static int dist, strength, threshold;    private static final String EDGE_SCREEN = "Edge Detection", BLOCK_SCREEN = "Blocking", START_SCREEN = "Start", BACK = "Back";    public static void main(String[] args)    {        image = null;        outImg = null;        frame = new JFrame("Images");        initScreen();    }    private static void initScreen()    {        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);        //TODO arrange ui so only relevant options are shown.        //panels        JPanel startPanel = new JPanel();        formatPanel(startPanel);        JPanel edgeScreen = new JPanel();        formatPanel(edgeScreen);        JPanel blockScreen = new JPanel();        formatPanel(blockScreen);        //panel container        JPanel containerPanel = new JPanel();        containerPanel.setLayout(new CardLayout());        containerPanel.add(startPanel, START_SCREEN);        containerPanel.add(edgeScreen, EDGE_SCREEN);        containerPanel.add(blockScreen, BLOCK_SCREEN);        ((CardLayout)containerPanel.getLayout()).show(containerPanel, START_SCREEN);        frame.setContentPane(containerPanel);        //choose image        startPanel.add(chooseImageButton());        edgeScreen.add(chooseImageButton());        blockScreen.add(chooseImageButton());        //screen select        Button edgeScreenButton = new Button(EDGE_SCREEN);        startPanel.add(edgeScreenButton);        edgeScreenButton.addActionListener(e -> {            ((CardLayout)containerPanel.getLayout()).show(containerPanel, EDGE_SCREEN);            frame.revalidate();            frame.repaint();        });        Button blockScreenButton = new Button(BLOCK_SCREEN);        startPanel.add(blockScreenButton);        blockScreenButton.addActionListener(e ->        {            ((CardLayout)containerPanel.getLayout()).show(containerPanel, BLOCK_SCREEN);            frame.revalidate();            frame.repaint();        });        //dist        JSlider distField = new JSlider(JSlider.HORIZONTAL, MIN_DIST, MAX_DIST, DEFAULT_DIST);        JLabel distLabel = new JLabel("Edge Size: ");        distLabel.setForeground(WHITE);        dist = DEFAULT_DIST;        distField.addChangeListener(e -> dist = distField.getValue());        distField.setSnapToTicks(true);        edgeScreen.add(distLabel);        edgeScreen.add(distField);        //strength        JSlider strengthField = new JSlider(JSlider.HORIZONTAL, MIN_STRENGTH, MAX_STRENGTH, DEFAULT_STRENGTH);        JLabel strengthLabel = new JLabel("Strength: ");        strengthLabel.setForeground(WHITE);        strength = DEFAULT_STRENGTH;        strengthField.addChangeListener(e -> strength = strengthField.getValue());        strengthField.setSnapToTicks(true);        edgeScreen.add(strengthLabel);        edgeScreen.add(strengthField);        //threshold        blockScreen.add(thresholdLabel());        blockScreen.add(thresholdSlider());        edgeScreen.add(thresholdLabel());        edgeScreen.add(thresholdSlider());        //process        Button process = new Button("Process Image");        edgeScreen.add(process);        process.addActionListener(e ->        {            if (image != null)            {                outImg = ImageProcesses.edgeColours(image, dist, strength);            }        });        //block        Button block = new Button("Block Image");        blockScreen.add(block);        block.addActionListener(e ->        {            if (image != null)            {                outImg = ImageProcesses.block(image, threshold);            }        });        //invert        Button invert = new Button("Invert");        edgeScreen.add(invert);        invert.addActionListener(e ->        {            if (outImg != null)            {                ImageProcesses.invert(outImg);            }        });        //threshold        Button thresholdButton = new Button("Threshold");        edgeScreen.add(thresholdButton);        thresholdButton.addActionListener(e ->        {            if (outImg != null)            {                outImg = ImageProcesses.threshold(outImg, threshold);            }        });        Button line = new Button("Edges");        edgeScreen.add(line);        line.addActionListener(e -> outImg = ImageProcesses.imgToPointsAndEdges(outImg));        //save        edgeScreen.add(savejpgButton());        blockScreen.add(savejpgButton());        edgeScreen.add(savepngButton());        blockScreen.add(savepngButton());        //add back button to edge and block screen        edgeScreen.add(backButton(containerPanel));        blockScreen.add(backButton(containerPanel));        frame.pack();        frame.revalidate();        frame.repaint();        frame.setVisible(true);    }    private static Button chooseImageButton()    {        Button choose = new Button("Choose Image");        choose.addActionListener(e -> image = Main.getImage());        return choose;    }    private static JSlider thresholdSlider()    {        JSlider thresholdField = new JSlider(JSlider.HORIZONTAL, MIN_THRESHOLD, MAX_THRESHOLD, DEFAULT_THRESHOLD);        threshold = DEFAULT_THRESHOLD;        thresholdField.addChangeListener(e -> threshold = thresholdField.getValue());        thresholdField.setSnapToTicks(true);        return thresholdField;    }    private static JLabel thresholdLabel()    {        JLabel thresholdLabel = new JLabel("Threshold: ");        thresholdLabel.setForeground(WHITE);        return thresholdLabel;    }    private static Button backButton(JPanel containerPanel)    {        Button back = new Button(BACK);        back.addActionListener(e -> {            ((CardLayout)containerPanel.getLayout()).show(containerPanel, START_SCREEN);            frame.revalidate();            frame.repaint();        });        return back;    }    private static Button savejpgButton()    {        Button saveJpg = new Button("Save as .jpg");        saveJpg.addActionListener(e ->        {            if (outImg != null)            {                saveImage("jpg");            }        });        return saveJpg;    }    private static Button savepngButton()    {        Button savePng = new Button("Save as .png");        savePng.addActionListener(e ->        {            if (outImg != null)            {                saveImage("png");            }        });        return savePng;    }    private static BufferedImage getImage()    {        boolean imageAccepted;        BufferedImage image = null;        do        {            imageAccepted = true;            JFileChooser fileChooser = new JFileChooser();            FileFilter fileFilter = new ImageFilter();            fileChooser.setFileFilter(fileFilter);            fileChooser.setMultiSelectionEnabled(false);            fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);            fileChooser.showOpenDialog(frame);            File file = fileChooser.getSelectedFile();            try            {                if (file != null)                {                    image = ImageIO.read(file);                }            }            catch (java.io.IOException e)            {                imageAccepted = false;            }        } while (!imageAccepted);        return image;    }    private static void saveImage(String format)    {        JFileChooser fileChooser = new JFileChooser();        fileChooser.setMultiSelectionEnabled(false);        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);        fileChooser.showSaveDialog(frame);        File file = fileChooser.getSelectedFile();        try {            if (file != null)            {                String path = file.getAbsolutePath();                //Slightly convoluted check for presence of file extension                if (!(new ImageFilter().accept(file)))                {                    path = file.getAbsolutePath() + "." + format;                }                File outputFile = new File(path);                ImageIO.write(outImg, format, outputFile);            }        } catch (IOException e) {            System.out.println("Fail");        }    }    private static void formatPanel(JPanel panel)    {        panel.setBackground(BACKGROUND);        panel.setBorder(BorderFactory.createEmptyBorder(BORDER, BORDER, BORDER, BORDER));        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));    }}

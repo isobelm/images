@@ -1,4 +1,5 @@
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 
 import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 import static java.lang.Math.abs;
@@ -7,6 +8,7 @@ public class ImageProcesses
 {
     private static final int RED_MASK = 0xFF0000, GREEN_MASK = 0xFF00, BLUE_MASK = 0xFF;
     private static final int RED_SHIFT = 16, GREEN_SHIFT = 8;
+    private static final int BLACK = 0, WHITE = 0xFFFFFF, MAX_POINTS_IN_EDGE = 100, MAX_POINTS_IN_POINT = 10, MIN_POINTS_IN_POINT = 3;
     private static final int INIT_MAX_SQUARE = 200;
 
     public static BufferedImage edgeColours(BufferedImage image, int dist, int strength)
@@ -35,11 +37,6 @@ public class ImageProcesses
                 int difG = Math.max(abs(g - gh), abs(g - gv));
                 int difB = Math.max(abs(b - bh), abs(b - bv));
 
-                if (i == 0 && j == 0)
-                {
-                    System.out.println("R: " + r + "\tG: " + g + "\tB: " + b + "\ndR: " + difR + "\tdG: " + difG + "\tdB: " + difB);
-                }
-
                 if (strength != 0)
                 {
                     difR >>= RED_SHIFT;
@@ -66,6 +63,7 @@ public class ImageProcesses
 
         return outImg;
     }
+
 
 
     public static void invert(BufferedImage outImg)
@@ -102,6 +100,8 @@ public class ImageProcesses
 
         return out;
     }
+
+
 
     private static void halve(BufferedImage img, BufferedImage out, int xMin, int xMax, int yMin, int yMax, int threshold)
     {
@@ -164,6 +164,8 @@ public class ImageProcesses
 
     }
 
+
+
     private static long[] aveOfRect(BufferedImage img, int xMin, int xMax, int yMin, int yMax)
     {
         int count = 0;
@@ -192,12 +194,133 @@ public class ImageProcesses
         return ave;
     }
 
+
+
+    public static BufferedImage threshold(BufferedImage img, int threshold)
+    {
+        BufferedImage outImg = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
+        for (int j = 0; j < outImg.getHeight(); j++)
+        {
+            for (int i = 0; i < outImg.getWidth(); i++)
+            {
+                if (getRedValue(img.getRGB(i, j)) > getRedValue(threshold) && getBlueValue(img.getRGB(i, j)) > getBlueValue(threshold)
+                        && getGreenValue(img.getRGB(i, j)) > getGreenValue(threshold))
+                {
+                    outImg.setRGB(i, j, WHITE);
+                }
+                else
+                {
+                    outImg.setRGB(i, j, BLACK);
+                }
+            }
+        }
+
+        return outImg;
+    }
+
+
+
+    public static BufferedImage imgToPointsAndEdges(BufferedImage img)
+    {
+        BufferedImage outImg = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
+        img.copyData(outImg.getRaster());
+        ArrayList<Point> points = new ArrayList<>();
+        ArrayList<Edge> edges = new ArrayList<>();
+
+        for(int j = 0; j < outImg.getHeight(); j++)
+        {
+            for (int i = 0; i < outImg.getWidth(); i++)
+            {
+                if((outImg.getRGB(i, j) & WHITE) == BLACK)
+                {
+                    addEdge(outImg, i, j, points, edges);
+                }
+            }
+        }
+
+        for (Edge e:
+             edges)
+        {
+            e.draw(outImg, BLACK);
+        }
+        for (Point p:
+             points)
+        {
+            outImg.setRGB(p.getX(), p.getY(), BLACK);
+        }
+
+        return outImg;
+    }
+
+
+
+    private static void addEdge(BufferedImage img, int x, int y, ArrayList<Point> points, ArrayList<Edge> edges)
+    {
+        Point origin = new Point(x, y);
+        Point furthestPoint = new Point(x, y);
+
+        int noOfPoints = getPoints(img, x, y, origin, furthestPoint);
+
+        if (noOfPoints > MAX_POINTS_IN_POINT)
+        {
+            Edge e = new Edge(origin, furthestPoint);
+            points.add(origin);
+            points.add(furthestPoint);
+            edges.add(e);
+        }
+        else if (noOfPoints > MIN_POINTS_IN_POINT)
+        {
+            int xAve = (origin.getX() - furthestPoint.getX()) / 2 + furthestPoint.getX();
+            int yAve = (origin.getY() - furthestPoint.getY()) / 2 + furthestPoint.getY();
+
+            Point p = new Point(xAve, yAve);
+            points.add(p);
+        }
+
+
+    }
+
+
+
+    private static int getPoints(BufferedImage img, int x, int y, Point origin, Point furthestPoint)
+    {
+        img.setRGB(x, y, WHITE);
+        int pointsInContact = 0;
+        pointsInContact++;
+        for (int j = -1; j <= 1; j++)
+        {
+            for (int i = -1; i <= 1; i++)
+            {
+                if ((x + i) > 0 && (x + i) < img.getWidth() && (y + j) > 0 && (y + j) < img.getHeight())
+                {
+                    if ((img.getRGB(x + i, y + j) & WHITE) == BLACK)
+                    {
+                        pointsInContact += getPoints(img, x + i, y + j, origin, furthestPoint);
+                    }
+                }
+            }
+        }
+
+        Point p = new Point(x, y);
+        if (origin.getDistance(furthestPoint) < origin.getDistance(p))
+        {
+            furthestPoint.setX(p.getX());
+            furthestPoint.setY(p.getY());
+        }
+
+        return pointsInContact;
+    }
+
+
+
     private static int getRedValue(int colour)
     {
         int red = colour & RED_MASK;
         red = red >> RED_SHIFT;
         return red;
     }
+
+
 
     private static int getGreenValue(int colour)
     {
@@ -206,11 +329,15 @@ public class ImageProcesses
         return green;
     }
 
+
+
     private static int getBlueValue(int colour)
     {
         int blue = colour & BLUE_MASK;
         return blue;
     }
+
+
 
     private static int valsToInt(int r, int g, int b)
     {
