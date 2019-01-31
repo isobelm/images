@@ -3,6 +3,7 @@ import java.util.ArrayList;
 
 import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 import static java.lang.Math.abs;
+import static java.lang.Math.cos;
 
 public class ImageProcesses
 {
@@ -23,15 +24,15 @@ public class ImageProcesses
                 int current = image.getRGB(i, j);
                 int compH = image.getRGB(i + dist, j);
                 int compV = image.getRGB(i, j + dist);
-                int r = current & RED_MASK;
-                int rh = compH & RED_MASK;
-                int rv = compV & RED_MASK;
-                int g = current & GREEN_MASK;
-                int gh = compH & GREEN_MASK;
-                int gv = compV & GREEN_MASK;
-                int b = current & BLUE_MASK;
-                int bh = compH & BLUE_MASK;
-                int bv = compV & BLUE_MASK;
+                int r = getRedValue(current);
+                int rh = getRedValue(compH);
+                int rv = getRedValue(compV);
+                int g = getGreenValue(current);
+                int gh = getGreenValue(compH);
+                int gv = getGreenValue(compV);
+                int b = getBlueValue(current);
+                int bh = getBlueValue(compH);
+                int bv = getBlueValue(compV);
 
                 int difR = Math.max(abs(r - rh), abs(r - rv));
                 int difG = Math.max(abs(g - gh), abs(g - gv));
@@ -39,22 +40,22 @@ public class ImageProcesses
 
                 if (strength != 0)
                 {
-                    difR >>= RED_SHIFT;
+                    //difR >>= RED_SHIFT;
                     float tmp = difR * strengthMul;
                     difR = (int) tmp;
-                    difR <<= RED_SHIFT;
-                    if (difR > RED_MASK) difR = RED_MASK;
-                    difG >>= GREEN_SHIFT;
+                    //difR <<= RED_SHIFT;
+                    if (difR > BLUE_MASK) difR = BLUE_MASK;
+//                    difG >>= GREEN_SHIFT;
                     tmp = difG * strengthMul;
                     difG = (int) tmp;
-                    difG <<= GREEN_SHIFT;
-                    if (difG > GREEN_MASK) difG = GREEN_MASK;
+//                    difG <<= GREEN_SHIFT;
+                    if (difG > BLUE_MASK) difG = BLUE_MASK;
                     tmp = difB * strengthMul;
                     difB = (int) tmp;
                     if (difB > BLUE_MASK) difB = BLUE_MASK;
                 }
 
-                int colour = difB + difG + difR;
+                int colour = valsToInt(difR, difG, difB);
 
                 outImg.setRGB(i, j, colour);
 
@@ -203,14 +204,15 @@ public class ImageProcesses
         {
             for (int i = 0; i < outImg.getWidth(); i++)
             {
-                if (getRedValue(img.getRGB(i, j)) > getRedValue(threshold) && getBlueValue(img.getRGB(i, j)) > getBlueValue(threshold)
-                        && getGreenValue(img.getRGB(i, j)) > getGreenValue(threshold))
+                int colour = img.getRGB(i, j);
+                if (getRedValue(colour) > threshold || getBlueValue(colour) > threshold
+                        || getGreenValue(colour) > threshold)
                 {
-                    outImg.setRGB(i, j, WHITE);
+                    outImg.setRGB(i, j, BLACK);
                 }
                 else
                 {
-                    outImg.setRGB(i, j, BLACK);
+                    outImg.setRGB(i, j, WHITE);
                 }
             }
         }
@@ -238,21 +240,113 @@ public class ImageProcesses
             }
         }
 
+        points.add(new Point(0,0));
+        points.add(new Point(0,img.getHeight() - 1));
+        points.add(new Point(img.getWidth() - 1,0));
+        points.add(new Point(img.getWidth() - 1,img.getHeight() - 1));
+
+
+        int possibleEdges = points.size() * (points.size() + 1);
+        possibleEdges /= 2;
+
+        Edge[] allEdges = new Edge[possibleEdges];
+        int index = 0;
+        for (int i = 0; i < points.size(); i++)
+        {
+            for (int j = i; j < points.size(); j++)
+            {
+                Edge e = new Edge(points.get(i), points.get(j));
+                allEdges[index] = e;
+                index++;
+            }
+        }
+
+        sortEdges(allEdges);
+        ArrayList<Edge> filteredEdges = filterEdges(allEdges);
+
         for (Edge e:
-             edges)
+             filteredEdges)
         {
             e.draw(outImg, BLACK);
         }
-        for (Point p:
-             points)
-        {
-            outImg.setRGB(p.getX(), p.getY(), BLACK);
-        }
-
         return outImg;
     }
 
 
+    private static ArrayList<Edge> filterEdges(Edge[] edges)
+    {
+        ArrayList<Edge> filteredEdges = new ArrayList<>();
+
+        for (int i = 0; i < edges.length; i++)
+        {
+            Edge e = edges[i];
+            boolean intersects = false;
+            int j = 0;
+            while (!intersects && j < filteredEdges.size())
+            {
+                if (e.intersects(filteredEdges.get(j)))
+                {
+                    intersects = true;
+                }
+                else
+                {
+                    j++;
+                }
+            }
+
+            if (!intersects)
+            {
+                filteredEdges.add(0, e);
+            }
+        }
+
+        return filteredEdges;
+    }
+
+
+    private static void sortEdges(Edge[] edges)
+    {
+        int i = edges.length - 1;
+//        boolean nullP = true;
+//        while (nullP)
+//        {
+//            if (edges[i] == null)
+//            {
+//                i--;
+//            }
+//            else
+//            {
+//                nullP = false;
+//            }
+//        }
+        sortEdges(edges, 0, i);
+    }
+
+    private static void sortEdges(Edge[] edges, int start, int end)
+    {
+        if (start < end)
+        {
+            int x = end;
+            int i = start;
+            while(x != i)
+            {
+                if(edges[i].getLength() > edges[x].getLength())
+                {
+                    Edge tmp = edges[x];
+                    edges[x] = edges[i];
+                    edges[i] = edges[x - 1];
+                    edges[x - 1] = tmp;
+                    x--;
+                }
+                else
+                {
+                    i++;
+                }
+            }
+            sortEdges(edges, start, x - 1);
+            sortEdges(edges, x + 1, end);
+        }
+    }
 
     private static void addEdge(BufferedImage img, int x, int y, ArrayList<Point> points, ArrayList<Edge> edges)
     {

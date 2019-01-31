@@ -1,3 +1,4 @@
+
 import java.awt.image.BufferedImage;
 
 public class Edge
@@ -72,31 +73,123 @@ public class Edge
         }
     }
 
+    public boolean intersects(Edge e)
+    {
+        //check if one or more of the lines are vertical
+        if (a.getX() == b.getX())
+        {
+//            System.out.println("vert");
+            return this.verticalIntersection(e);
+        }
+        else if (e.b.getX() == e.a.getX())
+        {
+//            System.out.println("vert_oth");
+            return e.verticalIntersection(this);
+        }
+
+        //check if one or more of the lines are horizontal
+        if (a.getY() == b.getY())
+        {
+//            System.out.println("hor");
+            return this.horizontalIntersection(e);
+        }
+        else if (e.b.getY() == e.a.getY())
+        {
+//            System.out.println("hor_oth");
+            return e.horizontalIntersection(this);
+        }
+
+        //get x position of intersection
+        float xf = ((e.getC() - c) / (m - e.getM()));
+        int x =(int) xf;
+        //get y position of intersection
+        float y = m * x + c;
+        //int y = (int) fy;
+
+        //return whether (x,y) is within the range of both lines
+        return (x > Math.min(a.getX(), b.getX()) && x < Math.max(a.getX(), b.getX())
+                && y > Math.min(a.getY(), b.getY()) && y < Math.max(a.getY(), b.getY())
+                && (x > Math.min(e.getA().getX(), e.getB().getX())) && x < Math.max(e.getA().getX(), e.getB().getX())
+                && y > Math.min(e.getA().getY(), e.getB().getY()) && y < Math.max(e.getA().getY(), e.getB().getY()));
+    }
+
+    private boolean verticalIntersection(Edge e)
+    {
+        Edge edgeA = new Edge(a.getY(), a.getX(), b.getY(), b.getX());
+        Edge edgeB = new Edge(e.getA().getY(), e.getA().getX(), e.getB().getY(), e.getB().getX());
+        return edgeA.horizontalIntersection(edgeB);
+
+//        if (e.b.getX() == e.a.getX())   //if both lines are vertical
+//        {
+//            if (a.getX() == e.getA().getX())  //if both lines are on the same line
+//            {                                   //return if lines overlap
+//                return (Math.max(a.getY(), b.getY()) > Math.min(e.getA().getY(), e.getB().getY())
+//                        && (Math.min(a.getY(), b.getY()) < Math.max(e.getA().getY(), e.getB().getY())));
+//            } else return false;
+//        } else if (e.getA().getY() == e.getB().getY())
+//        {
+//            return (Math.max(a.getY(), b.getY()) > e.getA().getY() && Math.min(a.getY(), b.getY()) < e.getA().getY()
+//                    && Math.max(e.getA().getX(), e.getB().getX()) > a.getX() && Math.min(e.getA().getX(), e.getB().getX()) < a.getX());
+//        } else
+//        {
+////            System.out.println("m: " + e.getM() + "\nc: " + e.getC());
+//            int x = a.getX();
+//            double y = x * e.getM() + e.getC();
+////            System.out.println("x: " + x + "\ny: " + y);
+//
+//            return (y > Math.min(a.getY(), b.getY()) && y < Math.max(a.getY(), b.getY())
+//                    && (y > Math.min(e.getA().getY(), e.getB().getY())) && y < Math.max(e.getA().getY(), e.getB().getY())
+//                    && x > Math.min(e.getA().getX(), e.getB().getX()) && x < Math.max(e.getA().getX(), e.getB().getX()));
+//        }
+
+    }
+
+    private boolean horizontalIntersection(Edge e)
+    {
+        if (e.b.getY() == e.a.getY())   //if both lines are horizontal
+        {
+            if (a.getY() == e.getA().getY())  //if both lines are on the same line
+            {                                   //return if lines overlap
+                return (Math.max(a.getX(), b.getX()) > Math.min(e.getA().getX(), e.getB().getX())
+                        && (Math.min(a.getX(), b.getX()) < Math.max(e.getA().getX(), e.getB().getX())));
+            } else return false;
+        } else if (e.getA().getX() == e.getB().getX())
+        {
+            return (Math.max(a.getX(), b.getX()) > e.getA().getX() && Math.min(a.getX(), b.getX()) < e.getA().getX()
+            && Math.max(e.getA().getY(), e.getB().getY()) > a.getY() && Math.min(e.getA().getY(), e.getB().getY()) < a.getY());
+        }
+        else
+        {
+//            System.out.println("m: " + e.getM() + "\nc: " + e.getC());
+            double y = a.getY();
+            double x = ((y - e.getC()) / e.getM());
+            double thisMinX =  Math.min(a.getX(), b.getX());
+            double thisMaxX =  Math.max(a.getX(), b.getX());
+            double eMinX =  Math.min(e.getA().getX(), e.getB().getX());
+            double eMaxX =  Math.max(e.getA().getX(), e.getB().getX());
+            double eMinY =  Math.min(e.getA().getY(), e.getB().getY());
+            double eMaxY =  Math.max(e.getA().getY(), e.getB().getY());
+//            System.out.println("x: " + x + "\ny: " + y);
+
+            return (x > thisMinX && x < thisMaxX
+                    && x > eMinX && x < eMaxX
+                    && y > eMinY && y < eMaxY);
+        }
+    }
+
     public boolean equals(Edge e)
     {
         return ((a.equals(e.a) && b.equals(e.b)) || (a.equals(e.b) && b.equals(e.a)));
     }
 
-    public Point getA()
+    private Point getA()
     {
         return a;
     }
 
-    public void setA(Point a)
-    {
-        this.a = a;
-        calculateEquations();
-    }
-
-    public Point getB()
+    private Point getB()
     {
         return b;
-    }
-
-    public void setB(Point b)
-    {
-        this.b = b;
-        calculateEquations();
     }
 
     public double getLength()
@@ -104,9 +197,23 @@ public class Edge
         return length;
     }
 
-    public void setLength(double length)
+    private float getM()
     {
-        this.length = length;
-        calculateEquations();
+        return m;
+    }
+
+    private float getC()
+    {
+        return c;
+    }
+
+    private float getN()
+    {
+        return n;
+    }
+
+    private float getD()
+    {
+        return d;
     }
 }
