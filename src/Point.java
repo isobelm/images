@@ -1,12 +1,12 @@
 public class Point
 {
-    private int x, y;
+    private int x, y, priority;
 
-    Point(int x, int y)
+    Point(int x, int y, int priority)
     {
         this.x = x;
         this.y = y;
-
+        this.priority = priority;
     }
 
     public boolean equals(Point p)
@@ -42,4 +42,13 @@ public class Point
         this.y = y;
     }
 
+    public int getPriority()
+    {
+        return priority;
+    }
+
+    public void setPriority(int priority)
+    {
+        this.priority = priority;
+    }
 }

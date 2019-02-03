@@ -3,14 +3,13 @@ import java.util.ArrayList;
 
 import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 import static java.lang.Math.abs;
-import static java.lang.Math.cos;
 
 public class ImageProcesses
 {
     private static final int RED_MASK = 0xFF0000, GREEN_MASK = 0xFF00, BLUE_MASK = 0xFF;
     private static final int RED_SHIFT = 16, GREEN_SHIFT = 8;
     private static final int BLACK = 0, WHITE = 0xFFFFFF, MAX_POINTS_IN_EDGE = 100, MAX_POINTS_IN_POINT = 10, MIN_POINTS_IN_POINT = 3;
-    private static final int INIT_MAX_SQUARE = 200;
+    private static final int INIT_MAX_SQUARE = 200, MAX_POINTS = 100;
 
     public static BufferedImage edgeColours(BufferedImage image, int dist, int strength)
     {
@@ -226,8 +225,7 @@ public class ImageProcesses
     {
         BufferedImage outImg = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
         img.copyData(outImg.getRaster());
-        ArrayList<Point> points = new ArrayList<>();
-        ArrayList<Edge> edges = new ArrayList<>();
+        ArrayList<Point> pointsArr = new ArrayList<>();
 
         for(int j = 0; j < outImg.getHeight(); j++)
         {
@@ -235,27 +233,54 @@ public class ImageProcesses
             {
                 if((outImg.getRGB(i, j) & WHITE) == BLACK)
                 {
-                    addEdge(outImg, i, j, points, edges);
+                    addEdge(outImg, i, j, pointsArr);
                 }
             }
         }
 
-        points.add(new Point(0,0));
-        points.add(new Point(0,img.getHeight() - 1));
-        points.add(new Point(img.getWidth() - 1,0));
-        points.add(new Point(img.getWidth() - 1,img.getHeight() - 1));
+        Point[] points;
+        if (pointsArr.size() > MAX_POINTS)
+        {
+            Point[] tmp = new Point[pointsArr.size()];
+            for (int i = 0; i < tmp.length; i++)
+            {
+                tmp[i] = pointsArr.get(i);
+            }
+
+            sortPoints(tmp);
+            points = new Point[MAX_POINTS + 4];
+            for (int i = 4; i < MAX_POINTS + 4; i++)
+            {
+                points[i] = tmp[i];
+            }
+        }
+        else
+        {
+            points = new Point[pointsArr.size() + 4];
+            int i = 4;
+            for (Point point : pointsArr)
+            {
+                points[i] = point;
+                i++;
+            }
+        }
 
 
-        int possibleEdges = points.size() * (points.size() + 1);
+        points[0] = new Point(0,0, 0);
+        points[1] = new Point(0,img.getHeight() - 1, 0);
+        points[2] = new Point(img.getWidth() - 1,0, 0);
+        points[3] = new Point(img.getWidth() - 1,img.getHeight() - 1, 0);
+
+        int possibleEdges = points.length * (points.length - 1);
         possibleEdges /= 2;
 
         Edge[] allEdges = new Edge[possibleEdges];
         int index = 0;
-        for (int i = 0; i < points.size(); i++)
+        for (int i = 0; i < points.length; i++)
         {
-            for (int j = i; j < points.size(); j++)
+            for (int j = i + 1; j < points.length; j++)
             {
-                Edge e = new Edge(points.get(i), points.get(j));
+                Edge e = new Edge(points[i], points[j]);
                 allEdges[index] = e;
                 index++;
             }
@@ -307,18 +332,18 @@ public class ImageProcesses
     private static void sortEdges(Edge[] edges)
     {
         int i = edges.length - 1;
-//        boolean nullP = true;
-//        while (nullP)
-//        {
-//            if (edges[i] == null)
-//            {
-//                i--;
-//            }
-//            else
-//            {
-//                nullP = false;
-//            }
-//        }
+        boolean lastEdgeFound = false;
+        while (!lastEdgeFound)
+        {
+            if (edges[i] == null)
+            {
+                i--;
+            }
+            else
+            {
+                lastEdgeFound = true;
+            }
+        }
         sortEdges(edges, 0, i);
     }
 
@@ -348,26 +373,58 @@ public class ImageProcesses
         }
     }
 
-    private static void addEdge(BufferedImage img, int x, int y, ArrayList<Point> points, ArrayList<Edge> edges)
+    private static void sortPoints(Point[] points)
     {
-        Point origin = new Point(x, y);
-        Point furthestPoint = new Point(x, y);
+        int i = points.length - 1;
+        sortPoints(points, 0, i);
+    }
 
-        int noOfPoints = getPoints(img, x, y, origin, furthestPoint);
+    private static void sortPoints(Point[] points, int start, int end)
+    {
+        if (start < end)
+        {
+            int x = end;
+            int i = start;
+            while(x != i)
+            {
+                if(points[i].getPriority() < points[x].getPriority())
+                {
+                    Point tmp = points[x];
+                    points[x] = points[i];
+                    points[i] = points[x - 1];
+                    points[x - 1] = tmp;
+                    x--;
+                }
+                else
+                {
+                    i++;
+                }
+            }
+            sortPoints(points, start, x - 1);
+            sortPoints(points, x + 1, end);
+        }
+    }
+
+    private static void addEdge(BufferedImage img, int x, int y, ArrayList<Point> points)
+    {
+        Point origin = new Point(x, y, 1);
+        Point furthestPoint = new Point(x, y, 1);
+
+        int noOfPoints = getPoints(img, x, y, origin, furthestPoint, 0);
 
         if (noOfPoints > MAX_POINTS_IN_POINT)
         {
-            Edge e = new Edge(origin, furthestPoint);
+            origin.setPriority(noOfPoints);
+            furthestPoint.setPriority(noOfPoints);
             points.add(origin);
             points.add(furthestPoint);
-            edges.add(e);
         }
         else if (noOfPoints > MIN_POINTS_IN_POINT)
         {
             int xAve = (origin.getX() - furthestPoint.getX()) / 2 + furthestPoint.getX();
             int yAve = (origin.getY() - furthestPoint.getY()) / 2 + furthestPoint.getY();
 
-            Point p = new Point(xAve, yAve);
+            Point p = new Point(xAve, yAve, noOfPoints);
             points.add(p);
         }
 
@@ -376,26 +433,28 @@ public class ImageProcesses
 
 
 
-    private static int getPoints(BufferedImage img, int x, int y, Point origin, Point furthestPoint)
+    private static int getPoints(BufferedImage img, int x, int y, Point origin, Point furthestPoint, int pointsInContact)
     {
         img.setRGB(x, y, WHITE);
-        int pointsInContact = 0;
         pointsInContact++;
-        for (int j = -1; j <= 1; j++)
+        if (pointsInContact <= MAX_POINTS_IN_EDGE)
         {
-            for (int i = -1; i <= 1; i++)
+            for (int j = -1; j <= 1; j++)
             {
-                if ((x + i) > 0 && (x + i) < img.getWidth() && (y + j) > 0 && (y + j) < img.getHeight())
+                for (int i = -1; i <= 1; i++)
                 {
-                    if ((img.getRGB(x + i, y + j) & WHITE) == BLACK)
+                    if ((x + i) > 0 && (x + i) < img.getWidth() && (y + j) > 0 && (y + j) < img.getHeight())
                     {
-                        pointsInContact += getPoints(img, x + i, y + j, origin, furthestPoint);
+                        if ((img.getRGB(x + i, y + j) & WHITE) == BLACK)
+                        {
+                            pointsInContact = getPoints(img, x + i, y + j, origin, furthestPoint, pointsInContact);
+                        }
                     }
                 }
             }
         }
 
-        Point p = new Point(x, y);
+        Point p = new Point(x, y, pointsInContact);
         if (origin.getDistance(furthestPoint) < origin.getDistance(p))
         {
             furthestPoint.setX(p.getX());

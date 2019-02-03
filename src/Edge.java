@@ -4,13 +4,13 @@ import java.awt.image.BufferedImage;
 public class Edge
 {
     private Point a, b;
-    private float m, c, n, d;
+    private double m, c, n, d;
     private double length;
 
-    Edge(int xa, int ya, int xb, int yb)
+    Edge(int xa, int ya, int xb, int yb, int priority)
     {
-        a = new Point(xa, ya);
-        b = new Point(xb, yb);
+        a = new Point(xa, ya, priority);
+        b = new Point(xb, yb, priority);
         calculateEquations();
     }
 
@@ -27,9 +27,9 @@ public class Edge
         float yDif = a.getY() - b.getY();
         m = yDif / xDif;
         n = xDif / yDif;
-        float mx = (m * a.getX());
+        double mx = (m * a.getX());
         c = a.getY() - mx;
-        float ny = (n * a.getY());
+        double ny = (n * a.getY());
         d = a.getX() - ny;
         length = calculateLength();
     }
@@ -76,12 +76,14 @@ public class Edge
     public boolean intersects(Edge e)
     {
         //check if one or more of the lines are vertical
-        if (a.getX() == b.getX())
+        //if (a.getX() == b.getX())
+        if (a.getX() == b.getX() || c == Double.POSITIVE_INFINITY || c == Double.NEGATIVE_INFINITY)
         {
 //            System.out.println("vert");
             return this.verticalIntersection(e);
         }
-        else if (e.b.getX() == e.a.getX())
+        //else if (e.b.getX() == e.a.getX())
+        else if (e.a.getX() == e.b.getX() || e.c == Double.POSITIVE_INFINITY || e.c == Double.NEGATIVE_INFINITY)
         {
 //            System.out.println("vert_oth");
             return e.verticalIntersection(this);
@@ -100,10 +102,10 @@ public class Edge
         }
 
         //get x position of intersection
-        float xf = ((e.getC() - c) / (m - e.getM()));
+        double xf = ((e.getC() - c) / (m - e.getM()));
         int x =(int) xf;
         //get y position of intersection
-        float y = m * x + c;
+        double y = m * x + c;
         //int y = (int) fy;
 
         //return whether (x,y) is within the range of both lines
@@ -115,33 +117,9 @@ public class Edge
 
     private boolean verticalIntersection(Edge e)
     {
-        Edge edgeA = new Edge(a.getY(), a.getX(), b.getY(), b.getX());
-        Edge edgeB = new Edge(e.getA().getY(), e.getA().getX(), e.getB().getY(), e.getB().getX());
+        Edge edgeA = new Edge(a.getY(), a.getX(), b.getY(), b.getX(), a.getPriority());
+        Edge edgeB = new Edge(e.getA().getY(), e.getA().getX(), e.getB().getY(), e.getB().getX(), e.getA().getPriority());
         return edgeA.horizontalIntersection(edgeB);
-
-//        if (e.b.getX() == e.a.getX())   //if both lines are vertical
-//        {
-//            if (a.getX() == e.getA().getX())  //if both lines are on the same line
-//            {                                   //return if lines overlap
-//                return (Math.max(a.getY(), b.getY()) > Math.min(e.getA().getY(), e.getB().getY())
-//                        && (Math.min(a.getY(), b.getY()) < Math.max(e.getA().getY(), e.getB().getY())));
-//            } else return false;
-//        } else if (e.getA().getY() == e.getB().getY())
-//        {
-//            return (Math.max(a.getY(), b.getY()) > e.getA().getY() && Math.min(a.getY(), b.getY()) < e.getA().getY()
-//                    && Math.max(e.getA().getX(), e.getB().getX()) > a.getX() && Math.min(e.getA().getX(), e.getB().getX()) < a.getX());
-//        } else
-//        {
-////            System.out.println("m: " + e.getM() + "\nc: " + e.getC());
-//            int x = a.getX();
-//            double y = x * e.getM() + e.getC();
-////            System.out.println("x: " + x + "\ny: " + y);
-//
-//            return (y > Math.min(a.getY(), b.getY()) && y < Math.max(a.getY(), b.getY())
-//                    && (y > Math.min(e.getA().getY(), e.getB().getY())) && y < Math.max(e.getA().getY(), e.getB().getY())
-//                    && x > Math.min(e.getA().getX(), e.getB().getX()) && x < Math.max(e.getA().getX(), e.getB().getX()));
-//        }
-
     }
 
     private boolean horizontalIntersection(Edge e)
@@ -197,22 +175,22 @@ public class Edge
         return length;
     }
 
-    private float getM()
+    private double getM()
     {
         return m;
     }
 
-    private float getC()
+    private double getC()
     {
         return c;
     }
 
-    private float getN()
+    private double getN()
     {
         return n;
     }
 
-    private float getD()
+    private double getD()
     {
         return d;
     }

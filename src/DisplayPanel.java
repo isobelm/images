@@ -18,22 +18,6 @@ public class DisplayPanel extends JPanel
         super.paintComponent(g);
         if (image != null)
         {
-//            double imageAspect = (double) image.getHeight() / (double)image.getWidth();
-//            double canvasAspect = (double)this.getHeight() / (double)this.getWidth();
-//            double widthRatio = image.getWidth() / this.getWidth();
-//            double heightRatio = image.getHeight() / this.getHeight();
-//            int width, height;
-//
-//            if (imageAspect < canvasAspect)
-//            {
-//                width = this.getWidth();
-//                height = (int) (image.getHeight() / widthRatio);
-//            }
-//            else
-//            {
-//                width = (int) (image.getWidth() / heightRatio);
-//                height = this.getHeight();
-//            }
             int imgWidth = image.getWidth();
             int imgHeight = image.getHeight();
             int dispWidth = this.getWidth();
@@ -51,8 +35,9 @@ public class DisplayPanel extends JPanel
                 imgDispWidth = (imgDispHeight * imgWidth) / imgHeight;
             }
 
-            //g.drawImage(image, 0, 0, width, height, this);
-            g.drawImage(image, 0, 0, imgDispWidth, imgDispHeight, this);
+            int x = (dispWidth - imgDispWidth) / 2;
+            int y = (dispHeight - imgDispHeight) / 2;
+            g.drawImage(image, x, y, imgDispWidth, imgDispHeight, this);
         }
     }
 
