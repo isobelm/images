@@ -65,20 +65,24 @@ public class ImageProcesses
     }
 
 
-
-    public static void invert(BufferedImage outImg)
+    public static BufferedImage invert(BufferedImage img)
     {
-        for (int j = 0; j < outImg.getHeight(); j++)
+        BufferedImage result = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
+        result.setData(img.getData());
+        for (int j = 0; j < result.getHeight(); j++)
         {
-            for (int i = 0; i < outImg.getWidth(); i++)
+            for (int i = 0; i < result.getWidth(); i++)
             {
-                int colour = outImg.getRGB(i, j);
+                int colour = result.getRGB(i, j);
                 colour = ~colour;
                 colour &= 0xFFFFFF;
-                outImg.setRGB(i, j, colour);
+                result.setRGB(i, j, colour);
             }
         }
+
+        return result;
     }
+
 
     public static BufferedImage block(BufferedImage img, int threshold)
     {
@@ -100,7 +104,6 @@ public class ImageProcesses
 
         return out;
     }
-
 
 
     private static void halve(BufferedImage img, BufferedImage out, int xMin, int xMax, int yMin, int yMax, int threshold)
@@ -347,6 +350,7 @@ public class ImageProcesses
         sortEdges(edges, 0, i);
     }
 
+
     private static void sortEdges(Edge[] edges, int start, int end)
     {
         if (start < end)
@@ -373,11 +377,13 @@ public class ImageProcesses
         }
     }
 
+
     private static void sortPoints(Point[] points)
     {
         int i = points.length - 1;
         sortPoints(points, 0, i);
     }
+
 
     private static void sortPoints(Point[] points, int start, int end)
     {
@@ -404,6 +410,7 @@ public class ImageProcesses
             sortPoints(points, x + 1, end);
         }
     }
+
 
     private static void addEdge(BufferedImage img, int x, int y, ArrayList<Point> points)
     {
@@ -465,6 +472,25 @@ public class ImageProcesses
     }
 
 
+    public static BufferedImage insertSubImage(BufferedImage img, BufferedImage subImg, int x, int y)
+    {
+        BufferedImage result = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
+        result.setData(img.getData());
+
+        for (int j = 0; j < subImg.getHeight(); j++)
+        {
+            for (int i = 0; i < subImg.getWidth(); i++)
+            {
+                if (i + x < result.getWidth() && j + y < result.getHeight()
+                        && i + x >= 0 && j + y >= 0)
+                {
+                    result.setRGB(i + x, j + y, subImg.getRGB(i, j));
+                }
+            }
+        }
+        return result;
+    }
+
 
     private static int getRedValue(int colour)
     {
@@ -472,7 +498,6 @@ public class ImageProcesses
         red = red >> RED_SHIFT;
         return red;
     }
-
 
 
     private static int getGreenValue(int colour)
@@ -483,13 +508,11 @@ public class ImageProcesses
     }
 
 
-
     private static int getBlueValue(int colour)
     {
         int blue = colour & BLUE_MASK;
         return blue;
     }
-
 
 
     private static int valsToInt(int r, int g, int b)
